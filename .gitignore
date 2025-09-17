@@ -182,6 +182,3 @@ nginx/
 templates/
 docs/
 .vscode/
-src/js/
-src/libs/
-src/fonts/
