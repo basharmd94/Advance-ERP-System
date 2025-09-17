@@ -1,7 +1,7 @@
 # Ignoring src and assets folders
 
 # Exclude everything from vendors
-/src/assets/vendor
+
 
 # Ignoring static/assets folders
 ./assets/
@@ -28,7 +28,7 @@ eggs/
 .eggs/
 lib/
 # Local
-src/
+
 web_project/
 lib64/
 parts/
