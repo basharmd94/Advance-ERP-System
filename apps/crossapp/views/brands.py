@@ -5,8 +5,6 @@ from django.contrib.auth.decorators import login_required
 from web_project import TemplateLayout
 from apps.authentication.mixins import ZidRequiredMixin
 from apps.authentication.mixins import ModulePermissionMixin
-from apps.authentication.models import Business
-from ..models.caitem import Caitem
 from ..models.xcodes import Xcodes
 
 # Get logger for this module
@@ -35,7 +33,7 @@ class BrandsView(ZidRequiredMixin, ModulePermissionMixin, TemplateView):
 def get_brands_json(request):
     """Get brands list with specific columns as JSON"""
     logger.info(f"Getting brands list for user: {request.user.username}")
-    
+
     try:
         # Get current ZID from session
         current_zid = request.session.get('current_zid')
@@ -52,7 +50,7 @@ def get_brands_json(request):
             'zactive',
         )
 
-        # Convert brands data to list for JSON serialization    
+        # Convert brands data to list for JSON serialization
         brands_list = list(brands)
         logger.info(f"Successfully retrieved {len(brands_list)} brands for business: {current_zid}")
         return JsonResponse({'brands': brands_list}, safe=False)
@@ -65,20 +63,20 @@ def get_brands_json(request):
 def create_brand_api(request):
     """Create a new brand"""
     logger.info(f"Brand creation attempt by user: {request.user.username}")
-    
+
     if request.method != 'POST':
         logger.warning(f"Invalid method {request.method} for brand creation by user: {request.user.username}")
         return JsonResponse({'error': 'Only POST method allowed'}, status=405)
-    
+
     try:
         # Get current ZID from session
         current_zid = request.session.get('current_zid')
         if not current_zid:
             logger.warning(f"No business context found for brand creation by user: {request.user.username}")
             return JsonResponse({'error': 'No business context found'}, status=400)
-        
+
         logger.debug(f"Creating brand for ZID: {current_zid}")
-        
+
         # Get Business instance
 
         # Get brand name from POST data
@@ -86,34 +84,31 @@ def create_brand_api(request):
         if not brand_name:
             logger.warning(f"Empty brand name provided by user: {request.user.username}")
             return JsonResponse({'error': 'Brand name is required'}, status=400)
-        
+
         logger.debug(f"Attempting to create brand: {brand_name}")
-        
-        # Convert to lowercase for duplicate check
-        brand_code_lower = brand_name.lower()
-        
-        # Check if brand already exists (case-insensitive)
+
+        # Check if brand already exists (exact match)
         existing_brand = Xcodes.objects.filter(
             zid=current_zid,
             xtype='Brand',
-            xcode__iexact=brand_code_lower
+            xcode=brand_name
         ).first()
-        
+
         if existing_brand:
             logger.warning(f"Duplicate brand creation attempt: {brand_name} already exists for business: {current_zid}")
             return JsonResponse({'error': 'Brand already exists'}, status=400)
-        
+
         # Create new brand
         new_brand = Xcodes.objects.create(
-            xcode=brand_code_lower,
+            xcode=brand_name,
             xdescdet=brand_name,
             zid=current_zid,
             xtype='Brand',
             zactive = '1'
         )
-        
-        logger.info(f"Brand created successfully: {brand_name} (code: {brand_code_lower}) for business: {current_zid} by user: {request.user.username}")
-        
+
+        logger.info(f"Brand created successfully: {brand_name} (code: {brand_name}) for business: {current_zid} by user: {request.user.username}")
+
         return JsonResponse({
             'success': True,
             'message': 'Brand created successfully',
@@ -122,7 +117,7 @@ def create_brand_api(request):
                 'xdescdet': new_brand.xdescdet
             }
         })
-        
+
     except Exception as e:
         logger.error(f"Error creating brand: {str(e)} for user: {request.user.username}", exc_info=True)
         return JsonResponse({'error': str(e)}, status=500)
@@ -131,20 +126,20 @@ def create_brand_api(request):
 def update_brand_api(request, brand_code):
     """Update an existing brand"""
     logger.info(f"Brand update attempt by user: {request.user.username} for brand: {brand_code}")
-    
+
     if request.method != 'POST':
         logger.warning(f"Invalid method {request.method} for brand update by user: {request.user.username}")
         return JsonResponse({'error': 'Only POST method allowed'}, status=405)
-    
+
     try:
         # Get current ZID from session
         current_zid = request.session.get('current_zid')
         if not current_zid:
             logger.warning(f"No business context found for brand update by user: {request.user.username}")
             return JsonResponse({'error': 'No business context found'}, status=400)
-        
+
         logger.debug(f"Updating brand {brand_code} for ZID: {current_zid}")
-        
+
         # Get Business instance
 
         # Get the brand to update
@@ -152,53 +147,50 @@ def update_brand_api(request, brand_code):
             brand = Xcodes.objects.get(
                 zid=current_zid,
                 xtype='Brand',
-                xcode=brand_code.lower()
+                xcode=brand_code
             )
         except Xcodes.DoesNotExist:
             logger.warning(f"Brand not found: {brand_code} for business: {current_zid}")
             return JsonResponse({'error': 'Brand not found'}, status=404)
-        
+
         # Get new brand name from POST data
         new_brand_name = request.POST.get('brandName', '').strip()
         if not new_brand_name:
             logger.warning(f"Empty brand name provided for update by user: {request.user.username}")
             return JsonResponse({'error': 'Brand name is required'}, status=400)
-        
-        logger.debug(f"Updating brand {brand_code} to: {new_brand_name}")
-        
-        # Convert to lowercase for duplicate check
-        new_brand_code_lower = new_brand_name.lower()
-        
-        # Check if new brand name already exists (excluding current brand)
-        logger.debug(f"Original brand code (lower): {brand_code.lower()}")
-        logger.debug(f"New brand code (lower): {new_brand_code_lower}")
 
-        if new_brand_code_lower != brand_code.lower():
+        logger.debug(f"Updating brand {brand_code} to: {new_brand_name}")
+
+        # Check if new brand name already exists (excluding current brand)
+        logger.debug(f"Original brand code: {brand_code}")
+        logger.debug(f"New brand code: {new_brand_name}")
+
+        if new_brand_name != brand_code:
             existing_brand_query = Xcodes.objects.filter(
                 zid=current_zid,
                 xtype='Brand',
-                xcode__iexact=new_brand_code_lower
-            ).exclude(xcode=brand_code.lower())
-            
+                xcode=new_brand_name
+            ).exclude(xcode=brand_code)
+
             logger.debug(f"Existing brand check query: {existing_brand_query.query}")
             existing_brand = existing_brand_query.first()
 
             if existing_brand:
                 logger.warning(f"Duplicate brand name during update: {new_brand_name} already exists for business: {current_zid}")
                 return JsonResponse({'error': 'Brand name already exists'}, status=400)
-        
+
         # Update brand using filter and update to avoid primary key issues with managed=False
         Xcodes.objects.filter(
             zid=current_zid,
             xtype='Brand',
-            xcode=brand_code.lower() # Filter by the original xcode
+            xcode=brand_code  # Filter by the original xcode
         ).update(
-            xcode=new_brand_code_lower,
+            xcode=new_brand_name,
             xdescdet=new_brand_name
         )
-        
-        logger.info(f"Brand updated successfully: {brand_code} -> {new_brand_name} (code: {new_brand_code_lower}) for business: {current_zid} by user: {request.user.username}")
-        
+
+        logger.info(f"Brand updated successfully: {brand_code} -> {new_brand_name} (code: {new_brand_name}) for business: {current_zid} by user: {request.user.username}")
+
         return JsonResponse({
             'success': True,
             'message': 'Brand updated successfully',
@@ -207,7 +199,7 @@ def update_brand_api(request, brand_code):
                 'xdescdet': brand.xdescdet
             }
         })
-        
+
     except Exception as e:
         logger.error(f"Error updating brand: {str(e)} for user: {request.user.username}", exc_info=True)
         return JsonResponse({'error': str(e)}, status=500)
@@ -215,7 +207,7 @@ def update_brand_api(request, brand_code):
 @login_required
 def delete_brand_api(request, brand_code):
     """Delete an existing brand"""
-    
+
     if request.method != 'POST':
         logger.warning(f"Invalid method {request.method} for brand deletion by user: {request.user.username}")
         return JsonResponse({'error': 'Only POST method allowed'}, status=405)
@@ -233,24 +225,24 @@ def delete_brand_api(request, brand_code):
         except Xcodes.DoesNotExist:
             logger.warning(f"Brand not found for deletion: {brand_code} for business: {current_zid}")
             return JsonResponse({'error': 'Brand not found'}, status=404)
-        
+
         brand_name = brand.xcode
         logger.debug(f"Deleting brand {brand_name} (code: {brand_code}) for business: {current_zid} by user: {request.user.username}")
-        
+
         # Use a more specific delete query to ensure only one record is deleted
         deleted_count = Xcodes.objects.filter(
             zid=current_zid,
             xtype='Brand',
             xcode=brand_code
         ).delete()
-        
+
         logger.info(f"Brand deleted successfully: {brand_name} (code: {brand_code}) for business: {current_zid} by user: {request.user.username}")
-        
+
         return JsonResponse({
             'success': True,
             'message': 'Brand deleted successfully'
         })
-        
+
     except Exception as e:
         logger.error(f"Error deleting brand: {str(e)} for user: {request.user.username}", exc_info=True)
         return JsonResponse({'error': str(e)}, status=500)

@@ -50,8 +50,8 @@ $(function () {
                             '</button>' +
                             '<ul class="dropdown-menu">' +
                             '<li><a class="dropdown-item" href="javascript:;">Details</a></li>' +
-                            '<li><a class="dropdown-item edit-brand" href="javascript:;" data-brand-code="' + full.xcode + '" data-brand-name="' + (full.xdescdet || 'Unknown') + '">Edit</a></li>' +
-                            '<li><a class="dropdown-item text-danger delete-brand" href="javascript:;" data-brand-code="' + full.xcode + '" data-brand-name="' + (full.xdescdet || 'Unknown') + '">Delete</a></li>' +
+                            '<li><a class="dropdown-item edit-brand" href="javascript:;" data-brand-code="' + full.xcode + '" data-brand-name="' + (full.xcode || 'Unknown') + '">Edit</a></li>' +
+                            '<li><a class="dropdown-item text-danger delete-brand" href="javascript:;" data-brand-code="' + full.xcode + '" data-brand-name="' + (full.xcode || 'Unknown') + '">Delete</a></li>' +
                             '</ul>' +
                             '</div>'
                         );
@@ -101,9 +101,9 @@ $(function () {
     // Add Brand Modal Logic
     $('#addBrandForm').on('submit', function (e) {
         e.preventDefault();
-        
+
         var brandName = $('#brandName').val().trim();
-        
+
         // Basic validation
         if (!brandName) {
             Swal.fire({
@@ -116,10 +116,10 @@ $(function () {
             });
             return;
         }
-        
+
         // Get CSRF token
         var csrfToken = $('[name=csrfmiddlewaretoken]').val();
-        
+
         // Send AJAX request to create brand
         $.ajax({
             url: '/crossapp/api/brands/create/',
@@ -171,13 +171,14 @@ $(function () {
 
     // Edit Brand Event Handler
     $(document).on('click', '.edit-brand', function() {
+
         var brandCode = $(this).data('brand-code');
         var brandName = $(this).data('brand-name');
-        
+
         // Populate edit form
         $('#editBrandCode').val(brandCode);
         $('#editBrandName').val(brandName);
-        
+
         // Show edit modal
         $('#editBrandModal').modal('show');
     });
@@ -186,7 +187,7 @@ $(function () {
     $(document).on('click', '.delete-brand', function() {
         var brandCode = $(this).data('brand-code');
         var brandName = $(this).data('brand-name');
-        
+
         Swal.fire({
             title: 'Are you sure?',
             text: "You are about to delete the brand '" + brandName + "'. You won't be able to revert this!",
@@ -208,10 +209,10 @@ $(function () {
     // Edit Brand Form Submission
     $('#editBrandForm').on('submit', function(e) {
         e.preventDefault();
-        
+
         var brandCode = $('#editBrandCode').val();
         var newBrandName = $('#editBrandName').val().trim();
-        
+
         if (!newBrandName) {
             Swal.fire({
                 icon: 'warning',
@@ -223,14 +224,14 @@ $(function () {
             });
             return;
         }
-        
+
         updateBrand(brandCode, newBrandName);
     });
 
     // Function to update brand
     function updateBrand(brandCode, newBrandName) {
         var csrfToken = $('[name=csrfmiddlewaretoken]').val();
-        
+
         $.ajax({
             url: '/crossapp/api/brands/update/' + encodeURIComponent(brandCode) + '/',
             type: 'POST',
@@ -281,7 +282,7 @@ $(function () {
     // Function to delete brand
     function deleteBrand(brandCode) {
         var csrfToken = $('[name=csrfmiddlewaretoken]').val();
-        
+
         $.ajax({
             url: '/crossapp/api/brands/delete/' + encodeURIComponent(brandCode) + '/',
             type: 'POST',
