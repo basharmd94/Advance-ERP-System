@@ -15,10 +15,10 @@ class Business(models.Model):
 
 class Module(models.Model):
     """Model to represent different modules in the ERP system"""
-    name = models.CharField(max_length=50, unique=True)
-    code = models.CharField(max_length=20, unique=True)
+    name = models.CharField(max_length=150, unique=True)
+    code = models.CharField(max_length=150, unique=True)
     description = models.TextField(blank=True, null=True)
-    group = models.CharField(max_length=50, blank=True, null=True)
+    group = models.CharField(max_length=150, blank=True, null=True)
     is_active = models.BooleanField(default=True)
 
     def __str__(self):

@@ -8,6 +8,7 @@
   // Flat Picker
   // --------------------------------------------------------------------
   const flatpickrDate = document.querySelector('#flatpickr-date'),
+    flatpickrFrmDate = document.querySelector('#flatpickr-from-date'),
     flatpickrTime = document.querySelector('#flatpickr-time'),
     flatpickrDateTime = document.querySelector('#flatpickr-datetime'),
     flatpickrMulti = document.querySelector('#flatpickr-multi'),
@@ -22,7 +23,12 @@
       monthSelectorType: 'static'
     });
   }
-
+// From Date
+  if (flatpickrFrmDate) {
+    flatpickrFrmDate.flatpickr({
+      monthSelectorType: 'static'
+    });
+  }
   // Time
   if (flatpickrTime) {
     flatpickrTime.flatpickr({
